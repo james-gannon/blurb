@@ -1,0 +1,13 @@
+{
+  "name": "blurb-inbox",
+  "version": "1.0.0",
+  "description": "Blurb Inbox static frontend",
+  "scripts": {
+    "start": "serve -s .",
+    "build": "echo 'No build step needed'"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "serve": "^14.2.3"
+  }
+}
