@@ -68,7 +68,12 @@
       if (hasToken) {
         console.log('WE HAVE TOKEN!');
         const { error } = await supabaseClient.auth.exchangeCodeForSession({ url: window.location.href });
-        if (error) console.error('❌ Failed to exchange session:', error.message);
+        if (error) {
+          console.error('❌ Failed to exchange session:', error.message);
+          return;
+        }
+        // Wait briefly to let session hydrate
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       const { data: { session } } = await supabaseClient.auth.getSession();
