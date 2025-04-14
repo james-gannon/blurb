@@ -68,7 +68,6 @@
       </select>
       <label>Can you give us access to your call recording URLs or webhook?</label>
       <select name="hasWebhook">
-        <option value="">Select one</option>
         <option value="yes">Yes</option>
         <option value="no">No</option>
       </select>
@@ -140,6 +139,52 @@
       if (select && select.name === 'needNumbers') {
         numberDetails.classList.toggle('hidden', select.value !== 'yes');
       }
+    });
+
+    const form = document.getElementById('onboardingForm');
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+      const businessName = formData.get('companyName');
+      const callTool = formData.get('callTool');
+      const provider = formData.get('provider') || null;
+      const hasWebhook = formData.get('hasWebhook') || null;
+      const needNumbers = formData.get('needNumbers') || null;
+      const numberCount = formData.get('numberCount') || null;
+      const areaCode = formData.get('areaCode') || null;
+      const forwardingNumber = formData.get('forwardingNumber') || null;
+      const usesCRM = formData.get('usesCRM');
+
+      const { data: { user }, error: authError } = await client.auth.getUser();
+      if (authError || !user) {
+        alert('Not logged in. Please refresh and try again.');
+        return;
+      }
+
+      const { error } = await client
+        .from('profiles') // or 'users' depending on your schema
+        .upsert({
+          id: user.id,
+          business_name: businessName,
+          call_tool: callTool,
+          provider,
+          has_webhook: hasWebhook,
+          need_numbers: needNumbers,
+          number_count: numberCount,
+          area_code: areaCode,
+          forwarding_number: forwardingNumber,
+          uses_crm: usesCRM
+        });
+
+        if (error) {
+          alert('There was an error saving your info.');
+          console.error(error);
+          return;
+        }
+
+        window.location.href = '/inbox.html';
     });
   </script>
 </body>
