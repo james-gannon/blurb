@@ -78,7 +78,9 @@
           .eq('id', session.user.id)
           .single();
 
-        if (profileError) return console.error('Profile fetch error:', profileError);
+        if (profileError && profileError.code !== 'PGRST116') {
+          return console.error('Profile fetch error:', profileError);
+        }
 
         if (profile) {
           window.location.href = '/inbox.html';
