@@ -77,10 +77,11 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
-    const supabase = supabase.createClient('https://YOUR_PROJECT.supabase.co', 'YOUR_PUBLIC_ANON_KEY');
+    const { createClient } = supabase;
+    const supabaseClient = createClient('https://fxozalrulpenxeqfqkcn.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4b3phbHJ1bHBlbnhlcWZxa2NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1ODk5OTEsImV4cCI6MjA2MDE2NTk5MX0.HHBQuRMW9uetAOwyUlY8Kr2g0-9Dv24bL9-1Ts7KIR8');
 
     async function loadInbox() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await supabaseClient.auth.getUser();
       const statusEl = document.getElementById('user-status');
       const inboxEl = document.getElementById('inbox');
 
