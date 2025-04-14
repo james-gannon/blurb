@@ -87,6 +87,7 @@
     supabaseClient.auth.getSession(); // wakes up session state
     // Listen for auth state changes
     supabaseClient.auth.onAuthStateChange(async (event, session) => {
+      console.log('📣 Auth State Changed:', event);
       if (event === 'SIGNED_IN') {
         const { data: { user } } = await supabaseClient.auth.getUser();
         const { data: profile } = await supabaseClient
