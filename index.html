@@ -88,12 +88,7 @@
       button.disabled = true;
       button.textContent = 'Sending...';
 
-      const { error } = await supabaseClient.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: window.location.origin + '/index.html',
-        },
-      });
+      const { error } = await supabaseClient.auth.signInWithOtp({ email });
 
       if (error) {
         alert('Error sending magic link: ' + error.message);
