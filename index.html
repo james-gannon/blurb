@@ -47,20 +47,40 @@
     <button type="submit">Send Magic Link</button>
   </form>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <script>
-    const { createClient } = supabase;
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
     const supabaseClient = createClient(
       'https://fxozalrulpenxeqfqkcn.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4b3phbHJ1bHBlbnhlcWZxa2NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1ODk5OTEsImV4cCI6MjA2MDE2NTk5MX0.HHBQuRMW9uetAOwyUlY8Kr2g0-9Dv24bL9-1Ts7KIR8'
     );
 
+    // 🔍 Initial session debug
     (async () => {
       const { data: sessionData } = await supabaseClient.auth.getSession();
       console.log('🔍 Session Data:', sessionData);
     })();
 
-    // Handle login form submission
+    // 📣 Listen for auth events
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
+      console.log('📣 Auth Change Event:', event, session);
+      if (event === 'SIGNED_IN') {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        const { data: profile } = await supabaseClient
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (profile) {
+          window.location.href = '/inbox.html';
+        } else {
+          window.location.href = '/onboarding.html';
+        }
+      }
+    });
+
+    // 📩 Handle magic link request
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('email').value;
@@ -81,26 +101,6 @@
         button.textContent = 'Send Magic Link';
       } else {
         alert('Magic link sent! Check your inbox.');
-      }
-    });
-
-    supabaseClient.auth.getSession(); // wakes up session state
-    // Listen for auth state changes
-    supabaseClient.auth.onAuthStateChange(async (event, session) => {
-      console.log('📣 Auth State Changed:', event);
-      if (event === 'SIGNED_IN') {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        const { data: profile } = await supabaseClient
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        if (profile) {
-          window.location.href = '/inbox.html';
-        } else {
-          window.location.href = '/onboarding.html';
-        }
       }
     });
   </script>
