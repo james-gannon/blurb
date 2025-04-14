@@ -57,38 +57,40 @@
 
     console.log('HELLO THERE!');
 
-    (async () => {
-      let attempts = 0;
-      let session = null;
+    if (document.getElementById('login-form')) {
+      (async () => {
+        let attempts = 0;
+        let session = null;
 
-      while (attempts < 10 && !session) {
-        const { data, error } = await supabaseClient.auth.getSession();
-        session = data.session;
-        if (session) break;
-        await new Promise(resolve => setTimeout(resolve, 300));
-        attempts++;
-      }
-
-      console.log('✅ Final Session Check:', session);
-
-      if (session && session.user) {
-        const { data: profile, error: profileError } = await supabaseClient
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError && profileError.code !== 'PGRST116') {
-          return console.error('Profile fetch error:', profileError);
+        while (attempts < 10 && !session) {
+          const { data, error } = await supabaseClient.auth.getSession();
+          session = data.session;
+          if (session) break;
+          await new Promise(resolve => setTimeout(resolve, 300));
+          attempts++;
         }
 
-        if (profile) {
-          window.location.href = '/inbox.html';
-        } else {
-          window.location.href = '/onboarding.html';
+        console.log('✅ Final Session Check:', session);
+
+        if (session && session.user) {
+          const { data: profile, error: profileError } = await supabaseClient
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError && profileError.code !== 'PGRST116') {
+            return console.error('Profile fetch error:', profileError);
+          }
+
+          if (profile) {
+            window.location.href = '/inbox.html';
+          } else {
+            window.location.href = '/onboarding.html';
+          }
         }
-      }
-    })();
+      })();
+    }
 
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
