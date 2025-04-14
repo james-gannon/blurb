@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blurb Inbox</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f9fafb;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #111827;
+      color: white;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 {
+      font-size: 1.5rem;
+      margin: 0;
+    }
+    .inbox-container {
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 1rem;
+    }
+    .call-card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .call-header {
+      font-weight: bold;
+      font-size: 1rem;
+    }
+    .summary {
+      margin-top: 0.5rem;
+      font-size: 0.95rem;
+    }
+    audio {
+      margin-top: 1rem;
+      width: 100%;
+    }
+    .status {
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+      color: #555;
+    }
+    .skeleton {
+      background-color: #e5e7eb;
+      height: 120px;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📥 Blurb Inbox</h1>
+    <div id="user-status">Loading...</div>
+  </header>
+  <div class="inbox-container" id="inbox">
+    <div class="skeleton"></div>
+    <div class="skeleton"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    const supabase = supabase.createClient('https://YOUR_PROJECT.supabase.co', 'YOUR_PUBLIC_ANON_KEY');
+
+    async function loadInbox() {
+      const { data: { user } } = await supabase.auth.getUser();
+      const statusEl = document.getElementById('user-status');
+      const inboxEl = document.getElementById('inbox');
+
+      if (!user) {
+        statusEl.textContent = 'Not logged in';
+        inboxEl.innerHTML = '<p style="text-align:center">Please <a href="/onboarding.html">log in</a> to see your inbox.</p>';
+        return;
+      }
+
+      statusEl.textContent = `Logged in as ${user.email}`;
+
+      const response = await fetch('/api/get-inbox-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user.id })
+      });
+
+      const { calls } = await response.json();
+      inboxEl.innerHTML = '';
+
+      if (!calls || calls.length === 0) {
+        inboxEl.innerHTML = '<p style="text-align:center">No calls yet.</p>';
+        return;
+      }
+
+      calls.forEach(call => {
+        const card = document.createElement('div');
+        card.className = 'call-card';
+        card.innerHTML = `
+          <div class="call-header">📞 ${call.caller_name || 'Unknown Caller'}</div>
+          <div class="summary">${call.summary}</div>
+          <audio controls src="${call.audio_url}"></audio>
+          <div class="status">${call.status || 'Unreviewed'}</div>
+        `;
+        inboxEl.appendChild(card);
+      });
+    }
+
+    loadInbox();
+  </script>
+</body>
+</html>
