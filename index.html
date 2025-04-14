@@ -58,21 +58,18 @@
     console.log('HELLO THERE!');
 
     (async () => {
-      const hash = window.location.hash;
-      const hasToken = hash.includes('access_token');
-      console.log('Hashes!');
-      console.log('Has token?', hasToken);
+      let attempts = 0;
+      let session = null;
 
-      if (hasToken) {
-        console.log('WE HAVE TOKEN!');
-        const { error } = await supabaseClient.auth.exchangeCodeForSession({ url: window.location.href });
-        if (error) return console.error('❌ Failed to exchange session:', error.message);
-        await new Promise(resolve => setTimeout(resolve, 500));
+      while (attempts < 10 && !session) {
+        const { data, error } = await supabaseClient.auth.getSession();
+        session = data.session;
+        if (session) break;
+        await new Promise(resolve => setTimeout(resolve, 300));
+        attempts++;
       }
 
-      const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
-      console.log('✅ Session after exchange:', session);
-      if (sessionError) console.error('Session error:', sessionError);
+      console.log('✅ Final Session Check:', session);
 
       if (session && session.user) {
         const { data: profile, error: profileError } = await supabaseClient
