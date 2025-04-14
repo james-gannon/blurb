@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Blurb Smart Onboarding</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Blurb Onboarding</title>
   <style>
     body {
       font-family: sans-serif;
@@ -45,8 +45,7 @@
 <body>
   <h1>Let's Set Up Your Blurb Inbox</h1>
 
-  <div id="loading">Checking your session...</div>
-  <form id="onboardingForm" class="hidden">
+  <form id="onboardingForm">
     <label>What’s your business name?</label>
     <input type="text" name="companyName" required>
 
@@ -76,7 +75,6 @@
     <div id="provisionNumbers" class="hidden">
       <label>Would you like us to provision phone numbers for you?</label>
       <select name="needNumbers">
-        <option value="">Select one</option>
         <option value="yes">Yes</option>
         <option value="no">No</option>
       </select>
@@ -109,22 +107,12 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
-    const { createClient } = supabase
-    const client = createClient('https://fxozalrulpenxeqfqkcn.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4b3phbHJ1bHBlbnhlcWZxa2NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1ODk5OTEsImV4cCI6MjA2MDE2NTk5MX0.HHBQuRMW9uetAOwyUlY8Kr2g0-9Dv24bL9-1Ts7KIR8')
-    
-    async function checkUser() {
-      const { data: { user } } = await client.auth.getUser();
-      const form = document.getElementById('onboardingForm');
-      const loading = document.getElementById('loading');
-      if (user) {
-        window.location.href = '/inbox.html';
-      } else {
-        loading.classList.add('hidden');
-        form.classList.remove('hidden');
-      }
-    }
-    checkUser();
+    const supabase = supabase.createClient(
+      'https://fxozalrulpenxeqfqkcn.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4b3phbHJ1bHBlbnhlcWZxa2NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1ODk5OTEsImV4cCI6MjA2MDE2NTk5MX0.HHBQuRMW9uetAOwyUlY8Kr2g0-9Dv24bL9-1Ts7KIR8'
+    );
 
+    const form = document.getElementById('onboardingForm');
     const callToolSelect = document.getElementById('callTool');
     const toolDetails = document.getElementById('toolDetails');
     const provisionNumbers = document.getElementById('provisionNumbers');
@@ -142,50 +130,38 @@
       }
     });
 
-    const form = document.getElementById('onboardingForm');
-
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
-
       const formData = new FormData(form);
-      const businessName = formData.get('companyName');
-      const callTool = formData.get('callTool');
-      const provider = formData.get('provider') || null;
-      const hasWebhook = formData.get('hasWebhook') || null;
-      const needNumbers = formData.get('needNumbers') || null;
-      const numberCount = formData.get('numberCount') || null;
-      const areaCode = formData.get('areaCode') || null;
-      const forwardingNumber = formData.get('forwardingNumber') || null;
-      const usesCRM = formData.get('usesCRM');
 
-      const { data: { user }, error: authError } = await client.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
         alert('Not logged in. Please refresh and try again.');
         return;
       }
 
-      const { error } = await client
-        .from('profiles') // or 'users' depending on your schema
+      const { error } = await supabase
+        .from('profiles')
         .upsert({
           id: user.id,
-          business_name: businessName,
-          call_tool: callTool,
-          provider,
-          has_webhook: hasWebhook,
-          need_numbers: needNumbers,
-          number_count: numberCount,
-          area_code: areaCode,
-          forwarding_number: forwardingNumber,
-          uses_crm: usesCRM
+          business_name: formData.get('companyName'),
+          call_tool: formData.get('callTool'),
+          provider: formData.get('provider') || null,
+          has_webhook: formData.get('hasWebhook') || null,
+          need_numbers: formData.get('needNumbers') || null,
+          number_count: formData.get('numberCount') || null,
+          area_code: formData.get('areaCode') || null,
+          forwarding_number: formData.get('forwardingNumber') || null,
+          uses_crm: formData.get('usesCRM')
         });
 
-        if (error) {
-          alert('There was an error saving your info.');
-          console.error(error);
-          return;
-        }
+      if (error) {
+        alert('There was an error saving your info.');
+        console.error(error);
+        return;
+      }
 
-        window.location.href = '/inbox.html';
+      window.location.href = '/inbox.html';
     });
   </script>
 </body>
