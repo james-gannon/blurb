@@ -103,25 +103,6 @@
         }
       }
     });
-
-    // Check for existing session on page load
-    (async () => {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (session) {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        const { data: profile } = await supabaseClient
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        if (profile) {
-          window.location.href = '/inbox.html';
-        } else {
-          window.location.href = '/onboarding.html';
-        }
-      }
-    })();
   </script>
 </body>
 </html>
