@@ -79,6 +79,7 @@
       }
     });
 
+    await supabaseClient.auth.getSession(); // wakes up session state
     // Listen for auth state changes
     supabaseClient.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN') {
