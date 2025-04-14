@@ -1,157 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Blurb Inbox</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Blurb Login</title>
   <style>
     body {
       font-family: sans-serif;
-      background-color: #f9fafb;
-      margin: 0;
-      padding: 0;
+      background: #f4f6f8;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
     }
-    header {
-      background-color: #111827;
-      color: white;
-      padding: 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+    h1 {
+      text-align: center;
     }
-    header h1 {
-      font-size: 1.5rem;
-      margin: 0;
-    }
-    .inbox-container {
-      max-width: 800px;
-      margin: 2rem auto;
-      padding: 1rem;
-    }
-    .call-card {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      padding: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .call-header {
+    label {
+      display: block;
+      margin-top: 20px;
       font-weight: bold;
-      font-size: 1rem;
     }
-    .summary {
-      margin-top: 0.5rem;
-      font-size: 0.95rem;
-    }
-    audio {
-      margin-top: 1rem;
+    input[type="email"] {
       width: 100%;
-    }
-    .status {
-      font-size: 0.85rem;
-      margin-top: 0.5rem;
-      color: #555;
-    }
-    .skeleton {
-      background-color: #e5e7eb;
-      height: 120px;
-      margin-bottom: 1rem;
-      border-radius: 8px;
-      animation: pulse 1.5s infinite ease-in-out;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-    #login-form {
-      max-width: 400px;
-      margin: 3rem auto;
-      padding: 1.5rem;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    #login-form input {
       padding: 10px;
-      width: 100%;
-      margin-top: 0.5rem;
+      margin-top: 8px;
       border: 1px solid #ccc;
       border-radius: 6px;
     }
-    #login-form button {
-      margin-top: 1rem;
-      padding: 10px;
+    button {
+      margin-top: 30px;
+      padding: 12px 20px;
       background-color: #111827;
       color: white;
       border: none;
-      border-radius: 6px;
-      cursor: pointer;
+      border-radius: 8px;
       width: 100%;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>📥 Blurb Inbox</h1>
-    <div id="user-status">Checking session...</div>
-  </header>
-
-  <div id="login-container">
-    <form id="login-form">
-      <label for="email">Start using Blurb — enter your email:</label>
-      <input type="email" id="email" required />
-      <button type="submit">Send Magic Link</button>
-    </form>
-  </div>
-
-  <div class="inbox-container" id="inbox" style="display:none;">
-    <div class="skeleton"></div>
-    <div class="skeleton"></div>
-  </div>
+  <h1>Welcome to Blurb</h1>
+  <form id="login-form">
+    <label for="email">Enter your email to get started:</label>
+    <input type="email" id="email" required />
+    <button type="submit">Send Magic Link</button>
+  </form>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
-    const { createClient } = supabase;
-    const client = createClient('https://fxozalrulpenxeqfqkcn.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4b3phbHJ1bHBlbnhlcWZxa2NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1ODk5OTEsImV4cCI6MjA2MDE2NTk5MX0.HHBQuRMW9uetAOwyUlY8Kr2g0-9Dv24bL9-1Ts7KIR8');
+    const supabase = supabase.createClient(
+      'https://fxozalrulpenxeqfqkcn.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4b3phbHJ1bHBlbnhlcWZxa2NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1ODk5OTEsImV4cCI6MjA2MDE2NTk5MX0.HHBQuRMW9uetAOwyUlY8Kr2g0-9Dv24bL9-1Ts7KIR8'
+    );
 
-    async function checkSession() {
-      const { data: { session } } = await client.auth.getSession();
-      if (!session) return;
-
-      const { data: { user } } = await client.auth.getUser();
-      const { data: profile } = await client
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (profile) {
-        window.location.href = '/inbox.html';
-      } else {
-        window.location.href = '/onboarding.html';
-      }
-    }
-
+    // Handle login form submission
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('email').value;
+      const button = e.target.querySelector('button');
+      button.disabled = true;
+      button.textContent = 'Sending...';
 
-      const { error } = await client.auth.signInWithOtp({
+      const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: window.location.origin + '/index.html'
-        }
+          emailRedirectTo: window.location.origin + '/index.html',
+        },
       });
 
       if (error) {
-        alert('Failed to send magic link');
-        console.error(error);
+        alert('Error sending magic link: ' + error.message);
+        button.disabled = false;
+        button.textContent = 'Send Magic Link';
       } else {
-        alert('Check your email for the login link!');
+        alert('Magic link sent! Check your inbox.');
       }
     });
 
-    checkSession();
+    // Listen for auth state changes
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN') {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (profile) {
+          window.location.href = '/inbox.html';
+        } else {
+          window.location.href = '/onboarding.html';
+        }
+      }
+    });
+
+    // Check for existing session on page load
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (profile) {
+          window.location.href = '/inbox.html';
+        } else {
+          window.location.href = '/onboarding.html';
+        }
+      }
+    })();
   </script>
 </body>
 </html>
