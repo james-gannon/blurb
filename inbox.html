@@ -86,8 +86,7 @@
       const inboxEl = document.getElementById('inbox');
 
       if (!user) {
-        statusEl.textContent = 'Not logged in';
-        inboxEl.innerHTML = '<p style="text-align:center">Please <a href="/onboarding.html">log in</a> to see your inbox.</p>';
+        window.location.href = '/index.html';
         return;
       }
 
