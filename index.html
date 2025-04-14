@@ -50,56 +50,21 @@
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-    const supabaseClient = createClient(
+    const supabase = createClient(
       'https://fxozalrulpenxeqfqkcn.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4b3phbHJ1bHBlbnhlcWZxa2NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1ODk5OTEsImV4cCI6MjA2MDE2NTk5MX0.HHBQuRMW9uetAOwyUlY8Kr2g0-9Dv24bL9-1Ts7KIR8'
     );
 
-    console.log('HELLO THERE!');
+    const loginForm = document.getElementById('login-form');
 
-    if (document.getElementById('login-form')) {
-      (async () => {
-        let attempts = 0;
-        let session = null;
-
-        while (attempts < 10 && !session) {
-          const { data, error } = await supabaseClient.auth.getSession();
-          session = data.session;
-          if (session) break;
-          await new Promise(resolve => setTimeout(resolve, 300));
-          attempts++;
-        }
-
-        console.log('✅ Final Session Check:', session);
-
-        if (session && session.user) {
-          const { data: profile, error: profileError } = await supabaseClient
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-
-          if (profileError && profileError.code !== 'PGRST116') {
-            return console.error('Profile fetch error:', profileError);
-          }
-
-          if (profile) {
-            window.location.href = '/inbox.html';
-          } else {
-            window.location.href = '/onboarding.html';
-          }
-        }
-      })();
-    }
-
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
+    loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('email').value;
       const button = e.target.querySelector('button');
       button.disabled = true;
       button.textContent = 'Sending...';
 
-      const { error } = await supabaseClient.auth.signInWithOtp({ email });
+      const { error } = await supabase.auth.signInWithOtp({ email });
 
       if (error) {
         alert('Error sending magic link: ' + error.message);
@@ -107,6 +72,30 @@
         button.textContent = 'Send Magic Link';
       } else {
         alert('Magic link sent! Check your inbox.');
+      }
+    });
+
+    // Wait for Supabase to hydrate session on load
+    window.addEventListener('DOMContentLoaded', async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Session check:', session);
+
+      if (session?.user) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError && profileError.code !== 'PGRST116') {
+          return console.error('Profile fetch error:', profileError);
+        }
+
+        if (profile) {
+          window.location.href = '/inbox.html';
+        } else {
+          window.location.href = '/onboarding.html';
+        }
       }
     });
   </script>
