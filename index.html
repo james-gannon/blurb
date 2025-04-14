@@ -1,155 +1,144 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Blurb</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blurb Smart Onboarding</title>
   <style>
-    :root {
-      --bg-color: #f9fafb;
-      --text-color: #111827;
-      --card-bg: #ffffff;
-    }
-    [data-theme="dark"] {
-      --bg-color: #111827;
-      --text-color: #f9fafb;
-      --card-bg: #1f2937;
-    }
-    [data-theme="random"] {
-      --bg-color: #ffe4e1;
-      --text-color: #333333;
-      --card-bg: #fffacd;
-    }
     body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      transition: all 0.3s ease-in-out;
-    }
-    .container {
-      max-width: 600px;
-      margin: 60px auto;
+      font-family: sans-serif;
+      background: #f4f6f8;
       padding: 20px;
+      max-width: 600px;
+      margin: auto;
     }
-    .header {
-      font-size: 2rem;
+    h1 {
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin-top: 20px;
       font-weight: bold;
-      margin-bottom: 1.5rem;
-      text-align: center;
     }
-    .theme-switcher {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .theme-switcher button {
-      margin: 0 5px;
-      padding: 6px 12px;
-      font-size: 0.9rem;
-      cursor: pointer;
-      border: none;
+    select, input[type="text"], input[type="tel"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      border: 1px solid #ccc;
       border-radius: 6px;
     }
-    .blurb {
-      background-color: var(--card-bg);
-      border-radius: 12px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-      padding: 20px;
-      margin-bottom: 20px;
-      transition: box-shadow 0.2s ease-in-out;
-    }
-    .blurb:hover {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    }
-    .date {
-      font-size: 0.875rem;
-      color: #6b7280;
-      margin-bottom: 0.5rem;
-    }
-    .summary {
-      font-size: 1rem;
-      line-height: 1.5;
-    }
-    .audio {
-      margin-top: 10px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .speed-button {
-      padding: 4px 8px;
-      background-color: #e5e7eb;
+    button {
+      margin-top: 30px;
+      padding: 12px 20px;
+      background-color: #111827;
+      color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: 8px;
+      width: 100%;
       cursor: pointer;
-      font-weight: bold;
+    }
+    .hidden {
+      display: none;
     }
   </style>
 </head>
-<body data-theme="light">
-  <div class="container">
-    <div class="header">Blurb Inbox</div>
-    <div class="theme-switcher">
-      <button onclick="setTheme('light')">Light</button>
-      <button onclick="setTheme('dark')">Dark</button>
-      <button onclick="setTheme('random')">Random</button>
+<body>
+  <h1>Let's Set Up Your Blurb Inbox</h1>
+
+  <div id="loading">Checking your session...</div>
+  <form id="onboardingForm" class="hidden">
+    <label>What’s your business name?</label>
+    <input type="text" name="companyName" required>
+
+    <label>Do you already use a phone/call tool?</label>
+    <select name="callTool" id="callTool">
+      <option value="">Select one</option>
+      <option value="yes">Yes</option>
+      <option value="no">No</option>
+    </select>
+
+    <div id="toolDetails" class="hidden">
+      <label>Which provider?</label>
+      <select name="provider">
+        <option>Twilio</option>
+        <option>CallRail</option>
+        <option>JustCall</option>
+        <option>Aircall</option>
+        <option>Other</option>
+      </select>
+      <label>Can you give us access to your call recording URLs or webhook?</label>
+      <select name="hasWebhook">
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+      </select>
     </div>
-    <div id="blurbContainer"></div>
-  </div>
 
+    <div id="provisionNumbers" class="hidden">
+      <label>Would you like us to provision phone numbers for you?</label>
+      <select name="needNumbers">
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+      </select>
+
+      <div id="numberDetails" class="hidden">
+        <label>How many numbers do you need?</label>
+        <select name="numberCount">
+          <option value="1_team">One number for your team</option>
+          <option value="per_user">One per user</option>
+          <option value="per_channel">One per marketing channel</option>
+        </select>
+        <label>Preferred area code or zip?</label>
+        <input type="text" name="areaCode">
+        <label>Forward calls to:</label>
+        <input type="tel" name="forwardingNumber">
+      </div>
+    </div>
+
+    <label>Do you use a CRM?</label>
+    <select name="usesCRM">
+      <option value="">Select one</option>
+      <option value="salesforce">Salesforce</option>
+      <option value="hubspot">HubSpot</option>
+      <option value="resimpli">REsimpli</option>
+      <option value="no">No</option>
+    </select>
+
+    <button type="submit">Finish Setup</button>
+  </form>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
-    const blurbs = [
-      {
-        date: "April 10, 2025",
-        summary: "\"Spoke with seller regarding the 3-bed in Warwick. They’re motivated but want a 2-week close. Needs interior updates. Willing to negotiate on price.\"",
-        audio: "/Users/root1/Documents/misc/Jagoe_Based.wav"
-      },
-      {
-        date: "April 7, 2025",
-        summary: "\"Inbound call from New Bedford. Referred by cousin. Strong equity position, open to novation option. Needs follow-up Monday.\""
+    const supabase = supabase.createClient('https://YOUR_PROJECT.supabase.co', 'YOUR_PUBLIC_ANON_KEY');
+
+    async function checkUser() {
+      const { data: { user } } = await supabase.auth.getUser();
+      const form = document.getElementById('onboardingForm');
+      const loading = document.getElementById('loading');
+      if (user) {
+        window.location.href = '/inbox.html';
+      } else {
+        loading.classList.add('hidden');
+        form.classList.remove('hidden');
       }
-    ];
-
-    function renderBlurbs() {
-      const container = document.getElementById('blurbContainer');
-      container.innerHTML = '';
-      blurbs.forEach((blurb, index) => {
-        const div = document.createElement('div');
-        div.className = 'blurb';
-
-        const date = `<div class='date'>${blurb.date}</div>`;
-        const summary = `<div class='summary'>${blurb.summary}</div>`;
-
-        let audioHTML = '';
-        if (blurb.audio) {
-          audioHTML = `
-            <div class='audio'>
-              <audio id='audio${index}' controls src='${blurb.audio}'></audio>
-              <button class='speed-button' onclick='changeSpeed(${index})' id='speed${index}'>1x</button>
-            </div>`;
-        }
-
-        div.innerHTML = `${date}${summary}${audioHTML}`;
-        container.appendChild(div);
-      });
     }
+    checkUser();
 
-    const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
-    function changeSpeed(index) {
-      const audio = document.getElementById(`audio${index}`);
-      const btn = document.getElementById(`speed${index}`);
-      let current = speeds.indexOf(parseFloat(audio.playbackRate));
-      const next = (current + 1) % speeds.length;
-      audio.playbackRate = speeds[next];
-      btn.textContent = speeds[next] + 'x';
-    }
+    const callToolSelect = document.getElementById('callTool');
+    const toolDetails = document.getElementById('toolDetails');
+    const provisionNumbers = document.getElementById('provisionNumbers');
+    const numberDetails = document.getElementById('numberDetails');
 
-    function setTheme(theme) {
-      document.body.setAttribute('data-theme', theme);
-    }
+    callToolSelect.addEventListener('change', function () {
+      toolDetails.classList.toggle('hidden', this.value !== 'yes');
+      provisionNumbers.classList.toggle('hidden', this.value !== 'no');
+    });
 
-    renderBlurbs();
+    provisionNumbers.addEventListener('change', function (e) {
+      const select = e.target.closest('select');
+      if (select && select.name === 'needNumbers') {
+        numberDetails.classList.toggle('hidden', select.value !== 'yes');
+      }
+    });
   </script>
 </body>
 </html>
