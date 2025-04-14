@@ -62,7 +62,11 @@
       const hash = window.location.hash;
       const hasToken = hash.includes('access_token');
 
+      console.log('Hashes!');
+      console.log('Has token?', hasToken);
+
       if (hasToken) {
+        console.log('WE HAVE TOKEN!');
         const { error } = await supabaseClient.auth.exchangeCodeForSession({ url: window.location.href });
         if (error) console.error('❌ Failed to exchange session:', error.message);
       }
@@ -70,6 +74,8 @@
       const { data: { session } } = await supabaseClient.auth.getSession();
       console.log('✅ Session after exchange:', session);
 
+      console.log('Session?!', session);
+      
       if (session) {
         const { data: { user } } = await supabaseClient.auth.getUser();
         const { data: profile } = await supabaseClient
