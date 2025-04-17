@@ -3,14 +3,46 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Blurb Login</title>
+  <title>Blurb</title>
   <style>
     body {
       font-family: sans-serif;
       background: #f4f6f8;
-      padding: 20px;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .loader-container {
+      text-align: center;
+    }
+    .loader {
+      display: inline-block;
+      width: 80px;
+      height: 80px;
+    }
+    .loader:after {
+      content: " ";
+      display: block;
+      width: 64px;
+      height: 64px;
+      margin: 8px;
+      border-radius: 50%;
+      border: 6px solid #111827;
+      border-color: #111827 transparent #111827 transparent;
+      animation: loader 1.2s linear infinite;
+    }
+    @keyframes loader {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .login-container {
+      display: none;
       max-width: 600px;
-      margin: auto;
+      width: 100%;
+      padding: 20px;
     }
     h1 {
       text-align: center;
@@ -38,14 +70,24 @@
       cursor: pointer;
     }
   </style>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#111827">
+  <link rel="apple-touch-icon" href="/assets/icon-192.png">
 </head>
 <body>
-  <h1>Welcome to Blurb</h1>
-  <form id="login-form">
-    <label for="email">Enter your email to get started:</label>
-    <input type="email" id="email" required />
-    <button type="submit">Send Magic Link</button>
-  </form>
+  <div class="loader-container" id="loading">
+    <div class="loader"></div>
+    <p>Loading Blurb...</p>
+  </div>
+
+  <div class="login-container" id="login-view">
+    <h1>Welcome to Blurb</h1>
+    <form id="login-form">
+      <label for="email">Enter your email to get started:</label>
+      <input type="email" id="email" required />
+      <button type="submit">Send Magic Link</button>
+    </form>
+  </div>
 
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
@@ -56,6 +98,34 @@
     );
 
     const loginForm = document.getElementById('login-form');
+    const loadingEl = document.getElementById('loading');
+    const loginView = document.getElementById('login-view');
+
+    async function checkAuth() {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error('Profile fetch error:', profileError);
+        }
+
+        // Redirect based on profile status
+        window.location.href = profile ? '/inbox.html' : '/onboarding.html';
+      } else {
+        // Show login view if not authenticated
+        loadingEl.style.display = 'none';
+        loginView.style.display = 'block';
+      }
+    }
+
+    // Check auth immediately
+    checkAuth();
 
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -72,32 +142,94 @@
         button.textContent = 'Send Magic Link';
       } else {
         alert('Magic link sent! Check your inbox.');
+        // Show loading state after login attempt
+        loginView.style.display = 'none';
+        loadingEl.style.display = 'flex';
+        loadingEl.querySelector('p').textContent = 'Check your email for the magic link...';
       }
     });
 
-    // Wait for Supabase to hydrate session on load
-    window.addEventListener('DOMContentLoaded', async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('Session check:', session);
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+          })
+          .catch(error => {
+            console.error('ServiceWorker registration failed: ', error);
+          });
+      });
+    }
+  </script>
+  <script>
+    // Service worker registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            
+            // Request permission for push notifications
+            return registration.pushManager.getSubscription()
+              .then(subscription => {
+                if (!subscription) {
+                  return Notification.requestPermission()
+                    .then(permission => {
+                      if (permission === 'granted') {
+                        subscribeToPushNotifications(registration);
+                      }
+                    });
+                }
+              });
+          })
+          .catch(error => {
+            console.error('ServiceWorker registration failed: ', error);
+          });
+      });
+    }
 
-      if (session?.user) {
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
+    // Function to subscribe to push notifications
+    function subscribeToPushNotifications(registration) {
+      const vapidPublicKey = 'YOUR_VAPID_PUBLIC_KEY'; // You'll need to generate this
+      
+      // Convert VAPID key to Uint8Array
+      const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+      
+      // Subscribe to push notifications
+      return registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: convertedVapidKey
+      })
+      .then(subscription => {
+        // Send subscription to your server
+        return fetch('/api/register-push', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            subscription: subscription
+          })
+        });
+      });
+    }
 
-        if (profileError && profileError.code !== 'PGRST116') {
-          return console.error('Profile fetch error:', profileError);
-        }
+    // Helper function to convert base64 to Uint8Array
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding)
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
 
-        if (profile) {
-          window.location.href = '/inbox.html';
-        } else {
-          window.location.href = '/onboarding.html';
-        }
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+
+      for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
       }
-    });
+      return outputArray;
+    }
   </script>
 </body>
 </html>

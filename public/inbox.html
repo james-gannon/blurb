@@ -64,6 +64,9 @@
       50% { opacity: 0.5; }
     }
   </style>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#111827">
+  <link rel="apple-touch-icon" href="/assets/icon-192.png">
 </head>
 <body>
   <header>
@@ -74,11 +77,24 @@
     <div class="skeleton"></div>
     <div class="skeleton"></div>
   </div>
+  <div id="pwa-install-prompt" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000; text-align: center;">
+    <p>Add Blurb to your home screen for quick access</p>
+    <button id="install-button" style="background: #111827; color: white; border: none; padding: 8px 16px; border-radius: 6px; margin-right: 10px;">Install</button>
+    <button id="dismiss-button" style="background: #e5e7eb; border: none; padding: 8px 16px; border-radius: 6px;">Not now</button>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
     const { createClient } = supabase;
     const supabaseClient = createClient('https://fxozalrulpenxeqfqkcn.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4b3phbHJ1bHBlbnhlcWZxa2NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1ODk5OTEsImV4cCI6MjA2MDE2NTk5MX0.HHBQuRMW9uetAOwyUlY8Kr2g0-9Dv24bL9-1Ts7KIR8');
+
+    let deferredPrompt;
+    const installPrompt = document.getElementById('pwa-install-prompt');
+    const installButton = document.getElementById('install-button');
+    const dismissButton = document.getElementById('dismiss-button');
+
+    // Check if user has already dismissed the prompt
+    const hasUserDismissedPrompt = localStorage.getItem('pwaPromptDismissed');
 
     async function loadInbox() {
       const { data: { user } } = await supabaseClient.auth.getUser();
@@ -120,6 +136,121 @@
     }
 
     loadInbox();
+
+    // Listen for beforeinstallprompt event
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later
+      deferredPrompt = e;
+      
+      // Don't show the prompt if user has dismissed it
+      if (!hasUserDismissedPrompt) {
+        // Show the install prompt after a short delay
+        setTimeout(() => {
+          installPrompt.style.display = 'block';
+        }, 3000);
+      }
+    });
+
+    // Install button click handler
+    installButton.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      
+      // Show the install prompt
+      deferredPrompt.prompt();
+      
+      // Wait for the user to respond to the prompt
+      const { outcome } = await deferredPrompt.userChoice;
+      
+      // Hide the prompt regardless of outcome
+      installPrompt.style.display = 'none';
+      
+      // We no longer need the prompt
+      deferredPrompt = null;
+    });
+
+    // Dismiss button click handler
+    dismissButton.addEventListener('click', () => {
+      installPrompt.style.display = 'none';
+      // Remember that user dismissed the prompt
+      localStorage.setItem('pwaPromptDismissed', 'true');
+    });
+
+    // If the app was installed, hide the prompt
+    window.addEventListener('appinstalled', () => {
+      installPrompt.style.display = 'none';
+      deferredPrompt = null;
+    });
+  </script>
+  <script>
+    // Service worker registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            
+            // Request permission for push notifications
+            return registration.pushManager.getSubscription()
+              .then(subscription => {
+                if (!subscription) {
+                  return Notification.requestPermission()
+                    .then(permission => {
+                      if (permission === 'granted') {
+                        subscribeToPushNotifications(registration);
+                      }
+                    });
+                }
+              });
+          })
+          .catch(error => {
+            console.error('ServiceWorker registration failed: ', error);
+          });
+      });
+    }
+
+    // Function to subscribe to push notifications
+    function subscribeToPushNotifications(registration) {
+      const vapidPublicKey = 'YOUR_VAPID_PUBLIC_KEY'; // You'll need to generate this
+      
+      // Convert VAPID key to Uint8Array
+      const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+      
+      // Subscribe to push notifications
+      return registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: convertedVapidKey
+      })
+      .then(subscription => {
+        // Send subscription to your server
+        return fetch('/api/register-push', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            subscription: subscription
+          })
+        });
+      });
+    }
+
+    // Helper function to convert base64 to Uint8Array
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding)
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
+
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+
+      for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+      }
+      return outputArray;
+    }
   </script>
 </body>
 </html>
