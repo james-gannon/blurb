@@ -148,19 +148,6 @@
         loadingEl.querySelector('p').textContent = 'Check your email for the magic link...';
       }
     });
-
-    // Register service worker for PWA
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
-          .then(registration => {
-            console.log('ServiceWorker registration successful with scope: ', registration.scope);
-          })
-          .catch(error => {
-            console.error('ServiceWorker registration failed: ', error);
-          });
-      });
-    }
   </script>
   <script>
     // Service worker registration
@@ -191,7 +178,7 @@
 
     // Function to subscribe to push notifications
     function subscribeToPushNotifications(registration) {
-      const vapidPublicKey = 'YOUR_VAPID_PUBLIC_KEY'; // You'll need to generate this
+      const vapidPublicKey = process.env.VAPID_PUBLIC_KEY; // You'll need to generate this
       
       // Convert VAPID key to Uint8Array
       const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
